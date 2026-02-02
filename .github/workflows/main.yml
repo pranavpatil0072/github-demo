@@ -1,0 +1,58 @@
+name: build & deploy
+
+on:
+  push:
+    branches:
+    - main
+
+env:
+    CI: false
+
+jobs:
+  build:
+    name: Build 
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: bahamutov/npm install@v1
+
+      - name: Build React app
+        run: npm run build
+
+      - name: Upload production-ready build files
+        uses: action/upload-artifact@v2
+        with:
+          name: production-files
+          path: ./build
+
+
+   deploy:
+      name: Deploy
+      needs: build
+      run-on: ubuntu-latest
+      if: github.ref == 'refs/heads/main'
+
+
+      step:
+      - name: Download artifact
+        uses: actions/download-artifact@v2
+        with: 
+          name: production-files
+          path: ./build
+
+      -name: Diploy to Github pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secretes.TOKEN }}
+        publish_dir: ./build
+
+  
